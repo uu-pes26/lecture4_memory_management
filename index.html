@@ -50,7 +50,7 @@
 		</ul>
 		<li class="fragment fade-up">Some amount of RAM/ROM is integrated in the µC</li>
 		<li class="fragment fade-up">Can be extended through external memory if needed</li>
-		<li class="fragment fade-up">RP2040 actually relies on external ROM</li>
+		<li class="fragment fade-up">RP2350 actually relies on external ROM (Flash)</li>
 	</ul>
 </section>
 
@@ -73,17 +73,18 @@
 		<li class="fragment fade-up">Most common (today): Flash memory</li>
 		<ul class="fragment fade-up">
 			<li>Fast reads</li>
-			<li>Slow writes, limited in number, "coarse"</li>
+			<li>Slow writes, limited in number, can be "coarse"</li>
 		</ul> 
 		<li class="fragment fade-up">Other kinds do exist: PROM, UV-EPROM, EEPROM</li>
-		<li class="fragment fade-up">Pico Board has 2MB Flash (external), RP2040 has on-chip 16kB ROM</li>
+		<li class="fragment fade-up">Pico 2 Board has 4MB Flash (external), RP2350 has 32kb ROM for bootloader</li>
+		<!--p353 RP2350 datasheet-->
 	</ul>
 </section>
 
 <section>
 	<h3>Random-Access Memory (RAM)</h3>
 	<ul>
-		<li class="fragment fade-up">Volatile: losses contents when power is off</li>
+		<li class="fragment fade-up">Volatile: loses contents when power is off</li>
 		<li class="fragment fade-up">Used for data (e.g. stack, heap)</li>
 		<li class="fragment fade-up">Unrestricted reading and writing</li>
 		<li class="fragment fade-up">Two kinds in use today: SRAM, DRAM</li>
@@ -92,15 +93,16 @@
 		<ul class="fragment fade-up">
 			<li>May cause unwanted variability in memory access times (wait or refresh...)</li>
 		</ul>
-		<li class="fragment fade-up">RP2040 has 265kB on-chip SRAM</li>
+		<li class="fragment fade-up">RP2350 has 520kB on-chip SRAM</li>
 	</ul>
 </section>
 
 
 <section>
-	<img src="images/rp2040.png" >
+	<img src="images/rp2350_overview.png" width="80%"
+		height="80%">
 	<div class="citation">
-		<div class="source">RP2040 Datasheet</div>
+		<div class="source">RP2350 Datasheet</div>
 	</div>
 </section>
 
@@ -110,7 +112,7 @@
 		<li>Determines how addreses get mapped to hardware</li>
 		<li class="fragment fade-up">Address space determined by processor address width</li>
 		<ul>
-			<li class="fragment fade-up">Cortex M0+ has 32 bit addresses => 2^32 address space (4GB)</li>
+			<li class="fragment fade-up">Cortex M33 has 32 bit addresses => 2^32 address space (4GB)</li>
 		</ul>
 		<li class="fragment fade-up">RAM, ROM, peripheral registers, ... are mapped into different address regions</li>
 		<li class="fragment fade-up">Details depend on the implementation of the chip</li>
@@ -118,10 +120,11 @@
 </section>
 
 <section>
-	<h3>Address Map of ARM Cortex M0+</h3>
-	<img src="images/CortexM3-memory_map.png" width="40%"
-		height="40%">
-	<ul class="fragment fade-up"><li>Check RP2040 Datasheet (Section 2.6) for specifics</li></ul>
+	<h3>Address Map of ARM Cortex M33</h3>
+	<img src="images/ARMCortexM33_memory_map.png" width="30%"
+		height="30%">
+	<!--https://developer.arm.com/documentation/100235/0002/the-cortex-m33-processor/memory-model/processor-memory-map-->
+	<ul class="fragment fade-up"><li>Check RP2350 Datasheet (Section 2.2) for specifics</li></ul>
 </section>
 
 <section>
@@ -162,11 +165,10 @@
 <section>
 	<h3>Solution 2 - Bit Set and Clear Registers</h3>
 	<ul>
-		<li class="fragment fade-up">Used by RP2040</li>
+		<li class="fragment fade-up">Used by RP2350 and RP2040</li>
 		<li class="fragment fade-up">A register with multiple bit fields has dedicated SET and CLR registers</li>
 		<li class="fragment fade-up">Writing a word to SET will set all bits in the main register that are set in the word</li>
 		<li class="fragment fade-up">Writing a word to CLR will clear all bits in the main register that are set in the word</li>
-		<li class="fragment fade-up">Main register might not even be visible/accessible!</li>
 
 		<aside class="notes">
 			Do example on Board:
@@ -183,9 +185,9 @@
 
 
 <section>
-	<h3>Examples of Bit Set and Clear Registers in RP20240</h3>
+	<h3>Examples of Bit Set and Clear Registers in RP2350</h3>
 	<ul>
-		<li>GPIO_OUT sets output level (1/0 → high/low) for GPIO0…29</li>
+		<li>GPIO_OUT sets output level (1/0 → high/low) for GPIO0…31</li>
 		<li class="fragment fade-up">GPIO_OUT_SET performs atomic bit-set on GPIO_OUT</li>
 		<ul class="fragment fade-up">
 			<li>Effectively: GPIO_OUT = GPIO_OUT | wdata</li>
@@ -194,7 +196,8 @@
 		<ul class="fragment fade-up">
 			<li>Effectively: GPIO_OUT = GPIO_OUT & ~wdata</li>
 		</ul>
-		<li class="fragment fade-up">Check RP2040 Datasheet (p. 46) for specifics</li>
+		<li class="fragment fade-up">Check RP2350 Datasheet (starting p. 61) for specifics</li>
+		<!--p26 rp2350 datasheet-->
 	</ul>
 </section>
 
@@ -228,7 +231,7 @@
 			<li>Zero-initialized read-write data (.bss)</li>
 		</ul>
 		<li>More sections possible, depends on implementation and compiler/linker</li>
-		<li>Code/data is flashed to µC, RAM is initialized during start-up</li>
+		<li>RAM is initialized during start-up</li>
 	</ul>
 </section>
 
@@ -247,8 +250,7 @@
 </section>
 
 <section data-background-image="images/code.jpg" data-background-opacity="0.4">
-	<h1>Example - ELF and 
-		<a href="https://github.com/raspberrypi/pico-sdk/blob/master/src/rp2_common/pico_crt0/rp2040/memmap_default.ld">Linker File</a></h1>
+	<h1>Example ELF file </h1>
 
 	<aside class="notes">
 		run command
@@ -285,19 +287,21 @@
 				<li>Heap_3: malloc + free, both thread-safe</li>
 				<li>Heap_4: same as Heap_3, but tries to avoid fragmentation</li>
 			</ul>
+			<div class="fragment fade-up">
 			<li>Zephyr</li>
 			<ul>
 				<li>Heaps can be created with K_HEAP_DEFINE</li>
-				<li>Can use k_heap_alloc and k_heap_free</li>
+				<li>Can use thread-safe k_heap_alloc and k_heap_free</li>
 				<li>Use of libc malloc and free is discouraged</li>
 				<li>For more info look into the <a href="https://docs.zephyrproject.org/apidoc/latest/group__heap__apis.html">documentation</a>!</li>
 			</ul>
+			</div>
 		</ul>
 	</ul>
 </section>
 
 <section>
-	<h3>Memory anagement best practice</h3>
+	<h3>Memory management best practice</h3>
 	<ul>
 		<li class="fragment fade-up">Allocate all required memory at compile time</li>
 		<li class="fragment fade-up">Sometimes enforced by coding standards</li>
@@ -308,7 +312,7 @@
 			</div>
 		</div>
 		<li class="fragment fade-up">Little risk of runtime errors due to memory management problems</li>
-		<li class="fragment fade-up">If dynamic allocation is unavoidable, do it only at start-up</li>
+		<li class="fragment fade-up">If dynamic allocation is unavoidable, do it only at start-up where possible</li>
 	</ul>
 </section>
 
@@ -343,7 +347,7 @@
 		<ul class="fragment fade-up">
 			<li>Context switch</li>
 			<li>Hardware interrupts</li>
-			<li>Thread returns from entry point</li>
+			<li>Thread termination (return from entry point)</li>
 			<li>k_yield</li>
 		</ul>
 		<li class="fragment fade-up">In Zephyr only used when there is no MPU</li>
